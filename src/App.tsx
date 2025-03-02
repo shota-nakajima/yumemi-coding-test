@@ -1,35 +1,45 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import './App.css';
+
+type Prefecture = { prefCode: number; prefName: string };
+type ApiResponse = { result: Prefecture[] };
+
+const API_URL = 'https://yumemi-frontend-engineer-codecheck-api.vercel.app/api/v1/prefectures';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [prefectures, setPrefectures] = useState<Prefecture[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    axios.get<ApiResponse>(API_URL, {
+      headers: { 'X-API-KEY': API_KEY }
+    })
+      .then(res => {
+        setPrefectures(res.data.result);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(`データの取得に失敗しました: ${err.message} || 'Unknown error'`);
+        setLoading(false);
+        console.error(err);
+      });
+  }, []);
 
   return (
-    <>
+    <div>
+      <h1>都道府県一覧</h1>
+      {loading && <p>データ取得中...</p>}
+      {error && <p>{error}</p>}
       <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        {prefectures.map(pref => (
+          <div key={pref.prefCode} >{pref.prefName}</div>
+        ))}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
 export default App
