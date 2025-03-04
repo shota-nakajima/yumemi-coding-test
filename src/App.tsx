@@ -35,7 +35,17 @@ function App() {
       {error && <p>{error}</p>}
       <div>
         {prefectures.map(pref => (
-          <div key={pref.prefCode} >{pref.prefName}</div>
+          <div key={pref.prefCode} >
+          <input
+            type="checkbox"
+            id={`prefecture-${pref.prefCode}`}
+            name={`prefecture-${pref.prefCode}`}
+          />
+          <label htmlFor={`prefecture-${pref.prefCode}`}>
+            {pref.prefName}
+          </label>
+          </div>
+
         ))}
       </div>
     </div>
