@@ -10,9 +10,11 @@ type PopulationComposition = { label: string; data: PopulationData[] };
 type PopulationResponse = { result:  { data: PopulationComposition[] } };
 type PopulationDataObject = { [key: number]: PopulationComposition[] };
 type ChartData = {year: number; [prefName: string]: number | string };
+type PopulationType = '総人口' | '年少人口' | '生産年齢人口' | '老年人口';
 
 const API_END_POINT = 'https://yumemi-frontend-engineer-codecheck-api.vercel.app';
 const API_KEY = import.meta.env.VITE_API_KEY;
+const POPULATION_TYPES: PopulationType[] = ['総人口', '年少人口', '生産年齢人口', '老年人口']
 
 function App() {
   const [prefectures, setPrefectures] = useState<Prefecture[]>([]);
@@ -21,6 +23,7 @@ function App() {
   const [selectedPrefCode, setSelectedPrefCode] = useState<number[]>([]);
   const [populationData, setPopulationData] = useState<PopulationDataObject>({});
   const [prefCodeToNameMap, setPrefCodeToNameMap] = useState<{ [key: number]: string }>({});
+  const [selectedPopulationType, setSelectedPopulationType] = useState<PopulationType>('総人口');
 
   useEffect(() => {
     axios.get<ApiResponse>(`${API_END_POINT}/api/v1/prefectures`, {
@@ -73,6 +76,10 @@ function App() {
       });
   };
 
+  const handlePopulationTypeChange = (type: PopulationType) => {
+    setSelectedPopulationType(type);
+  };
+
   const chartData = useMemo(() => {
     if (Object.keys(populationData).length === 0) return [];
 
@@ -82,15 +89,19 @@ function App() {
     const startYear = 1970;
     const endYear = 2020;
 
+    const populationTypeIndex = POPULATION_TYPES.indexOf(selectedPopulationType);
+    if (populationTypeIndex === -1) return [];
+
     selectedPrefCode.forEach(prefCode => {
       if (!populationData[prefCode] || !prefCodeToNameMap[prefCode]) return;
 
-      const totalpopulation = populationData[prefCode][0];
-      if (!totalpopulation || !totalpopulation.data) return;
+      // 選択された人口種別のデータを使用
+      const populationTypeData = populationData[prefCode][populationTypeIndex];
+      if (!populationTypeData || !populationTypeData.data) return;
 
       const prefName = prefCodeToNameMap[prefCode];
 
-      totalpopulation.data.forEach(item => {
+      populationTypeData.data.forEach(item => {
         if (item.year >= startYear && item.year <= endYear && item.year % 10 === 0) {
           if (!yearDataMap[item.year]) {
             yearDataMap[item.year] = { year: item.year };
@@ -101,7 +112,7 @@ function App() {
     });
 
     return Object.values(yearDataMap).sort((a, b) => a.year - b.year);
-  }, [populationData, selectedPrefCode, prefCodeToNameMap]);
+  }, [populationData, selectedPrefCode, prefCodeToNameMap, selectedPopulationType]);
 
   return (
     <div>
@@ -123,6 +134,25 @@ function App() {
           </label>
           </div>
         ))}
+      </div>
+
+      <div>
+        <h2>人口種別</h2>
+        <div>
+          {POPULATION_TYPES.map(type => (
+            <div key={type}>
+              <input
+                type="radio"
+                id={`type-${type}`}
+                name="populationType"
+                value={type}
+                checked={selectedPopulationType === type}
+                onChange={() => handlePopulationTypeChange(type)}
+              />
+              <label htmlFor={`type-${type}`}>{type}</label>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div>
